@@ -4,14 +4,24 @@ const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const OpenAIApi = require('openai');
-const cors = require('cors');
 require('dotenv').config()
+
 
 const PORT = process.env.PORT || 8080;
 const app = express();
-app.use(cors({origin: '*'}));
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+
+
+wss.on("connection", (ws) =>{
+  ws.send(JSON.stringify({ message: "Yo from server" }));
+  
+
+  ws.onmessage = (e) =>{
+    
+    console.log(e.data);
+  } 
+})
 
 
 const openai = new OpenAIApi({
@@ -51,6 +61,25 @@ app.get('/api/questions', async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
+
+app.post('/api/create-room', async (req, res) => {
+  const code = await createRoomCode();
+
+  console.log(code);
+  res.json({ roomCode: code });
+});
+
+// Source: https://www.w3resource.com/javascript-exercises/javascript-math-exercise-23.php
+function createRoomCode() {
+  var dt = new Date().getTime();
+  var uuid = 'xxxxx'.replace(/[xy]/g, function(c) {
+    var r = (dt + Math.random() * 16) % 16 | 0;
+    dt = Math.floor(dt / 16);
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+  return uuid;
+}
+
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
